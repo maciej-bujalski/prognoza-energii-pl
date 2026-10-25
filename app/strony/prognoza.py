@@ -8,6 +8,7 @@ import duckdb
 import pandas as pd
 import streamlit as st
 
+from energia.czas import czas_polski, szeroka_prognoza
 from energia.model.monitoring import ocen_ostatnie_dni
 from energia.model.trening import KATALOG
 from wspolne import PL, REZ, komunikat, liczba, motyw, os_y_mw, procent, sprawdz_baze, ulamek, wyglad, zapytanie
@@ -78,9 +79,10 @@ waznosc = json.loads((KATALOG / "waznosc_cech.json").read_text()) if (KATALOG / 
 for ramka in (prognozy, plan):
     ramka["data"] = pd.to_datetime(ramka["data"]).dt.date
 doba = prognozy["data"].max()
-na_dobe = prognozy[prognozy["data"] == doba]
-szerokie = na_dobe.pivot(index="czas_lokalny", columns="cel", values="p50")
-szczyt = szerokie["zapotrzebowanie"].idxmax()
+na_dobe = prognozy[prognozy["data"] == doba].assign(czas_polski=lambda d: czas_polski(d["godzina_utc"]))
+# kluczem jest godzina UTC: w dobie zmiany czasu zegar lokalny ma dwie godziny 2:00 (albo zadnej)
+szerokie = szeroka_prognoza(na_dobe)
+szczyt = szerokie.loc[szerokie["zapotrzebowanie"].idxmax(), "czas_polski"]
 oze_udzial = (szerokie["wiatr"] + szerokie["pv"]).sum() / szerokie["zapotrzebowanie"].sum()
 kiedy = "Jutro" if doba == date.today() + timedelta(days=1) else f"{doba:%d.%m}"
 wygenerowano = pd.Timestamp(prognozy["wygenerowano_utc"].iloc[0]).tz_convert(PL)
@@ -103,7 +105,7 @@ for cel in ("zapotrzebowanie", "wiatr", "pv"):
         **{"MW": lambda d: d["p50"], "od": lambda d: d["p10"], "do": lambda d: d["p90"]}
     )
     baza = alt.Chart(dane).encode(
-        x=alt.X("czas_lokalny:T", title=None, axis=alt.Axis(format="%H:%M", labelAngle=0, grid=False, tickCount=12))
+        x=alt.X("czas_polski:T", title=None, axis=alt.Axis(format="%H:%M", labelAngle=0, grid=False, tickCount=12))
     )
     # zapotrzebowanie nie zaczyna sie od zera, zeby bylo widac zmiennosc w ciagu doby
     skala_y = alt.Scale(zero=cel != "zapotrzebowanie")
@@ -112,17 +114,17 @@ for cel in ("zapotrzebowanie", "wiatr", "pv"):
     )
     linia = baza.mark_line(strokeWidth=2.4, color=KOLORY[cel]).encode(
         y="MW:Q",
-        tooltip=[alt.Tooltip("czas_lokalny:T", title="Godzina", format="%H:%M"),
+        tooltip=[alt.Tooltip("czas_polski:T", title="Godzina", format="%H:%M"),
                  alt.Tooltip("p50:Q", title="Prognoza (MW)", format=",.0f"),
                  alt.Tooltip("p10:Q", title="Dolna granica", format=",.0f"),
                  alt.Tooltip("p90:Q", title="Górna granica", format=",.0f")],
     )
     warstwy = [pas, linia]
     if not plan_doby.empty:
-        p = plan_doby.merge(dane[["godzina_utc", "czas_lokalny"]], on="godzina_utc")
+        p = plan_doby.merge(dane[["godzina_utc", "czas_polski"]], on="godzina_utc")
         warstwy.append(alt.Chart(p).mark_line(strokeWidth=1.6, strokeDash=[5, 4], color=m["przygaszony"]).encode(
-            x="czas_lokalny:T", y=f"{cel}:Q",
-            tooltip=[alt.Tooltip("czas_lokalny:T", title="Godzina", format="%H:%M"),
+            x="czas_polski:T", y=f"{cel}:Q",
+            tooltip=[alt.Tooltip("czas_polski:T", title="Godzina", format="%H:%M"),
                      alt.Tooltip(f"{cel}:Q", title="Plan PSE (MW)", format=",.0f")]))
     st.markdown(f"<h3>{NAZWY[cel]}</h3>", unsafe_allow_html=True)
     st.altair_chart(wyglad(alt.layer(*warstwy), m, 220), width="stretch", theme=None)
