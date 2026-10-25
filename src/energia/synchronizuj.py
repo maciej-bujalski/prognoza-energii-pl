@@ -10,7 +10,7 @@ import sys
 
 from energia.pipeline import PROJEKT
 
-REPO = "bujalek12/prognoza-energii-pl"
+REPO = "maciej-bujalski/prognoza-energii-pl"
 POBIERZ = [
     ("data", ["energia.duckdb"]),
     ("data/model", ["*.txt", "*.json", "*.parquet"]),

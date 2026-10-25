@@ -13,7 +13,7 @@ import httpx
 
 from energia.http import pobierz
 
-URL = "https://github.com/bujalek12/prognoza-energii-pl/releases/download/dane"
+URL = "https://github.com/maciej-bujalski/prognoza-energii-pl/releases/download/dane"
 # (katalog wzgledem projektu, nazwa pliku): tylko to, czego potrzebuje aplikacja
 PLIKI = [
     ("data", "energia.duckdb"),

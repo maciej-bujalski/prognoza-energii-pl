@@ -22,7 +22,7 @@ def test_pobiera_wszystkie_pliki_idac_za_przekierowaniem(tmp_path):
 
 
 def test_adres_wskazuje_wydanie_dane_publicznego_repo():
-    assert URL == "https://github.com/bujalek12/prognoza-energii-pl/releases/download/dane"
+    assert URL == "https://github.com/maciej-bujalski/prognoza-energii-pl/releases/download/dane"
 
 
 def test_nieudane_pobranie_nie_niszczy_poprzedniego_pliku(tmp_path):

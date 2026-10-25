@@ -7,7 +7,7 @@ import streamlit as st
 from energia.pipeline import BAZA
 from energia.zdalne import czy_odswiezyc, pobierz_z_wydania
 
-REPO = "https://github.com/bujalek12/prognoza-energii-pl"
+REPO = "https://github.com/maciej-bujalski/prognoza-energii-pl"
 REZ = "Rezydualne"
 PL = "Europe/Warsaw"
 POLECENIE = "<code>uv run python -m energia.pipeline</code>"
